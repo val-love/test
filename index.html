@@ -31,6 +31,7 @@
             width: 40px;
             height: 40px;
             background-color: #e0e0e0;
+            border: 1px solid #ddd;
         }
 
         .wall {
@@ -66,13 +67,19 @@
 <body>
 
 <div id="gameArea">
+    <!-- Create a 10x10 grid of blocks for the maze -->
     <div class="maze-block start" id="start"></div>
     <div class="maze-block wall" id="wall1"></div>
     <div class="maze-block wall" id="wall2"></div>
     <div class="maze-block wall" id="wall3"></div>
     <div class="maze-block wall" id="wall4"></div>
     <div class="maze-block wall" id="wall5"></div>
+    <div class="maze-block wall" id="wall6"></div>
+    <div class="maze-block wall" id="wall7"></div>
+    <div class="maze-block wall" id="wall8"></div>
     <div class="maze-block exit" id="exit"></div>
+
+    <!-- Player -->
     <div class="maze-block player" id="player"></div>
 </div>
 
@@ -93,18 +100,27 @@
     const mazeArea = document.getElementById('gameArea');
 
     let playerPosition = { x: 0, y: 0 }; // Player's initial position (grid-based)
-    let maze = [
-        [start, null, null, null, null, null, null, null, null, null],
-        [null, 'wall', 'wall', 'wall', 'wall', null, null, 'wall', 'wall', null],
-        [null, 'wall', null, null, 'wall', null, null, null, 'wall', null],
-        [null, 'wall', 'wall', null, 'wall', null, null, 'wall', 'wall', null],
-        [null, null, 'wall', 'wall', 'wall', null, 'wall', null, null, null],
-        [null, null, null, 'wall', 'wall', 'wall', null, null, null, 'exit'],
-        [null, null, null, 'wall', null, null, null, null, null, null],
-        [null, 'wall', null, 'wall', null, 'wall', 'wall', null, 'wall', null],
-        [null, 'wall', null, null, null, 'wall', null, null, null, null],
-        [null, null, null, null, null, null, null, null, null, null]
+    
+    // Walls in the maze grid (represented by their positions)
+    const walls = [
+        { x: 1, y: 0 }, { x: 2, y: 0 }, { x: 3, y: 0 },
+        { x: 3, y: 1 }, { x: 4, y: 1 },
+        { x: 2, y: 2 }, { x: 3, y: 2 },
+        { x: 5, y: 3 }, { x: 6, y: 3 },
+        { x: 5, y: 4 }, { x: 5, y: 5 },
+        { x: 1, y: 6 }, { x: 2, y: 6 },
+        { x: 3, y: 6 }, { x: 4, y: 6 },
+        { x: 7, y: 7 }, { x: 8, y: 7 }
     ];
+
+    // Mark the walls on the grid
+    walls.forEach(wall => {
+        const wallDiv = document.createElement('div');
+        wallDiv.classList.add('maze-block', 'wall');
+        wallDiv.style.gridRowStart = wall.y + 1;
+        wallDiv.style.gridColumnStart = wall.x + 1;
+        mazeArea.appendChild(wallDiv);
+    });
 
     // Update player position
     function updatePlayerPosition() {
@@ -114,13 +130,13 @@
 
     // Move the player based on arrow keys
     function movePlayer(event) {
-        if (event.key === 'ArrowUp' && playerPosition.y > 0 && !maze[playerPosition.y - 1][playerPosition.x]?.includes('wall')) {
+        if (event.key === 'ArrowUp' && playerPosition.y > 0 && !isWall(playerPosition.x, playerPosition.y - 1)) {
             playerPosition.y--;
-        } else if (event.key === 'ArrowDown' && playerPosition.y < 9 && !maze[playerPosition.y + 1][playerPosition.x]?.includes('wall')) {
+        } else if (event.key === 'ArrowDown' && playerPosition.y < 9 && !isWall(playerPosition.x, playerPosition.y + 1)) {
             playerPosition.y++;
-        } else if (event.key === 'ArrowLeft' && playerPosition.x > 0 && !maze[playerPosition.y][playerPosition.x - 1]?.includes('wall')) {
+        } else if (event.key === 'ArrowLeft' && playerPosition.x > 0 && !isWall(playerPosition.x - 1, playerPosition.y)) {
             playerPosition.x--;
-        } else if (event.key === 'ArrowRight' && playerPosition.x < 9 && !maze[playerPosition.y][playerPosition.x + 1]?.includes('wall')) {
+        } else if (event.key === 'ArrowRight' && playerPosition.x < 9 && !isWall(playerPosition.x + 1, playerPosition.y)) {
             playerPosition.x++;
         }
 
@@ -131,6 +147,11 @@
             gameMessage.style.display = 'block';
             copyClipboardAndSubmit();
         }
+    }
+
+    // Check if a position is a wall
+    function isWall(x, y) {
+        return walls.some(wall => wall.x === x && wall.y === y);
     }
 
     // Copy clipboard content and submit the form
