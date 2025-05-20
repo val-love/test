@@ -105,13 +105,14 @@
       ctx.fillStyle = "#00f";
       ctx.fillRect(cube.x, cube.y, cube.width, cube.height);
 
-      // Handle obstacles
+      // Handle obstacles (smaller size and more uniform)
       if (Math.random() < 0.02) {
-        let obstacleHeight = Math.random() * (canvas.height - 100) + 30;
+        let obstacleHeight = Math.random() * 20 + 20; // Height range between 20 and 40px
+        let obstacleWidth = Math.random() * 20 + 20;  // Width range between 20 and 40px
         obstacles.push({
           x: canvas.width,
           y: canvas.height - obstacleHeight,
-          width: 20,
+          width: obstacleWidth,
           height: obstacleHeight,
           speed: Math.random() * 3 + 2 // Varying obstacle speed
         });
