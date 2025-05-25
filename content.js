@@ -18,7 +18,7 @@ const fullHTML = `
   </style>
 </head>
 <body>
-  <h1>This page was HACKED BY VAL!</h1>
+  <h1>This page was HAXXX BY VAL!</h1>
   <p>VAL now controlS the entire content of this site.</p>
 </body>
 </html>
